@@ -1,190 +1,138 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
-  Box,
-  Menu,
-  MenuItem,
-  Avatar,
-  Paper,
-  Container,
-  Grid,
-  TextField,
-} from "@mui/material";
-import DashboardCustomizeIcon from "@mui/icons-material/DashboardCustomize";
-import SendIcon from "@mui/icons-material/Send";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import AppsIcon from "@mui/icons-material/Apps";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { useNavigate } from "react-router-dom";
+	Avatar,
+	Box,
+	Card,
+	CardContent,
+	Grid,
+	Typography,
+	IconButton,
+	Paper,
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import axios from 'axios';
+import { getMember, updateProfilePhoto } from '../service/Api'; // Your existing API function
+import { toast, ToastContainer } from 'react-toastify';
 
 const Profile = () => {
-  const navigate = useNavigate();
-  const user = JSON.parse(sessionStorage.getItem("user"));
-  const email = user?.email || "User";
+	const [userData, setUserData] = useState({});
+	const [userFields, setUserFields] = useState([]);
+	const [imagePreview, setImagePreview] = useState('');
 
-  const [anchorEl, setAnchorEl] = useState(null);
-  const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
-  const handleMenuClose = () => setAnchorEl(null);
+	useEffect(() => {
+		async function getDetails() {
+			try {
+				const response = await getMember();
+				const data = response?.data || {};
+				console.log(response?.data)
+				setUserData(data);
 
-  const handleLogout = () => {
-    sessionStorage.clear();
-    navigate("/login");
-  };
+				// Filter out sensitive fields and prepare display fields
+				const fields = Object.entries(data)
+					.filter(([key]) => key !== 'password' && key !== 'imageUrl')
+					.map(([key, value]) => ({
+						label: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+						value,
+					}));
 
-  const handleProfile = () => {
-    navigate("/profile");
-  };
+				setUserFields(fields);
+			} catch (error) {
+				console.error('Error fetching profile data:', error);
+			}
+		}
 
-  const iconHoverStyle = {
-    "&:hover": {
-      backgroundColor: "rgba(255,255,255,0.2)",
-      transform: "scale(1.15)",
-      boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.2)",
-    },
-    transition: "all 0.3s ease",
-  };
+		getDetails();
+	}, []);
 
-  return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#eaeff1" }}>
-      {/* AppBar */}
-      <AppBar position="static" sx={{ bgcolor: "#2f4f7f" }}>
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Typography variant="h6" sx={{ flex: 1, textAlign: "center" }}>
-            Welcome! {email}
-          </Typography>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <IconButton
-              color="inherit"
-              onClick={() => navigate("/dashboard")}
-              sx={iconHoverStyle}
-            >
-              <DashboardCustomizeIcon />
-            </IconButton>
-            <IconButton color="inherit" sx={iconHoverStyle}>
-              <SendIcon />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={() => navigate("/task-by-day")}
-              sx={iconHoverStyle}
-            >
-              <EventAvailableIcon />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={() => navigate("/task-by-month")}
-              sx={iconHoverStyle}
-            >
-              <AppsIcon />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={handleMenuClick}
-              sx={iconHoverStyle}
-            >
-              <AccountCircleIcon sx={{ fontSize: 30 }} />
-            </IconButton>
-          </Box>
-        </Toolbar>
-      </AppBar>
+	const handleImageChange = async (e) => {
+		const file = e.target.files[0];
+		if (!file) return;
 
-      {/* Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        sx={{ mt: "45px" }}
-      >
-        <MenuItem onClick={handleProfile}>Profile</MenuItem>
-        <MenuItem onClick={handleLogout}>Logout</MenuItem>
-      </Menu>
+		// Show local preview
+		const previewUrl = URL.createObjectURL(file);
+		setImagePreview(previewUrl);
 
-      {/* Profile Content */}
-      <Container sx={{ mt: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
-            <Avatar sx={{ width: 120, height: 120 }} />
-          </Box>
+		try {
+			const response = await updateProfilePhoto(file);
+			toast.success('Profile Image upadated successfully!');
+		} catch (err) {
+			console.error(err);
+			toast.error('Upload failed');
+		}
+	};
 
-          <Grid container spacing={4}>
-            {/* Row 1 */}
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Institute Name"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Email"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
 
-            {/* Row 2 */}
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Department"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Join Date"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
 
-            {/* Row 3 */}
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Address"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Phone"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
+	return (
+		<Box sx={{ p: 4, backgroundColor: '#f6f6f6', minHeight: '100vh' }}>
+			{/* Header with Avatar */}
+			<Paper
+				elevation={1}
+				sx={{
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					flexDirection: 'column',
+					py: 3,
+					mb: 4,
+				}}
+			>
+				<Box sx={{ position: 'relative' }}>
+					<Avatar
+						src={imagePreview || userData.imageUrl || 'https://via.placeholder.com/100'}
+						alt={userData.name || 'User'}
+						sx={{ width: 100, height: 100 }}
+					/>
+					<IconButton
+						size="small"
+						onClick={() => document.getElementById('imageUploadInput').click()}
+						sx={{
+							position: 'absolute',
+							top: 0,
+							right: -10,
+							color: '#1976d2',
+						}}
+					>
+						<EditIcon />
+					</IconButton>
+					<input
+						type="file"
+						accept="image/*"
+						id="imageUploadInput"
+						hidden
+						onChange={handleImageChange}
+					/>
+				</Box>
 
-            {/* Row 4 (optional extra) */}
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Project Name"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                label="Branch"
-                fullWidth
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-      </Container>
+				<Typography variant="h5" fontWeight="bold" sx={{ mt: 2 }}>
+					{userData.name || '—'}
+				</Typography>
+			</Paper>
 
-      {/* Footer */}
-      <Box sx={{ py: 2.5, textAlign: "center", bgcolor: "#f1f1f1" }}>
-        <Typography variant="body2" sx={{ color: "#444", fontWeight: 500 }}>
-          © Software Designed By PJSOFTECH Pvt. Ltd. | All Rights Reserved
-        </Typography>
-      </Box>
-    </Box>
-  );
+			{/* Profile Info Grid */}
+			<Grid container spacing={3}>
+				{Array.isArray(userFields) &&
+					userFields.map((item, index) => (
+						<Grid item size={{ xs: 12, md: 6 }} key={index}>
+							<Card elevation={1} sx={{ borderRadius: 2, px: 2, py: 1.5 }}>
+								<CardContent sx={{ p: 0 }}>
+									<Typography
+										variant="h6"
+										sx={{ color: '#1976d2', fontWeight: 'bold' }}
+									>
+										{item.label}
+									</Typography>
+									<Typography variant="body1" sx={{ mt: 0.5 }}>
+										{item.value || '—'}
+									</Typography>
+								</CardContent>
+							</Card>
+						</Grid>
+					))}
+			</Grid>
+			<ToastContainer position="top-right" autoClose={3000} />
+		</Box>
+	);
 };
 
 export default Profile;

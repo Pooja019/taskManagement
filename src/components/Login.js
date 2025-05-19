@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useNavigate } from "react-router-dom";
+import { SITE_URI } from "../service/Config";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -39,14 +40,16 @@ const Login = () => {
 
     try {
       const res = await loginUser({ email, password });
-      const { jwtToken, username } = res.data;
+      const { id, jwtToken, username } = res.data;
 
       if (jwtToken && username) {
         sessionStorage.setItem("isLoggedIn", "true");
         sessionStorage.setItem("token", jwtToken);
-        sessionStorage.setItem("user", JSON.stringify({ email: username }));
+        sessionStorage.setItem("username", username);
+        sessionStorage.setItem("userID", id);
 
-        navigate("/dashboard");
+
+        navigate(`${SITE_URI}/dashboard`);
       } else {
         setErrorMsg("Invalid login response. Please try again.");
       }

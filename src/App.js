@@ -1,91 +1,52 @@
 // App.js
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./components/Login";
-import DashboardPage from "./components/Dashboard";
 import TaskByDay from "./components/TaskByDay";
 import TaskByMonth from "./components/TaskByMonth";
 import { Login, ProtectedRoute } from "./components/ProtectedRoute";
 import TaskByAdmin from "./components/TaskByAdmin";
 import TeamLeaderTask from "./components/TeamLeaderTask";
 import Profile from "./components/Profile";
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import theme from "./Layout/theme";
+import { SITE_URI } from "./service/Config";
+import Layout from "./Layout/Layout";
+import Dashboard from "./components/Dashboard";
 
-function App() {
-  return (
-    <Router>
-      <Routes>
-        {/* Login Route */}
-        <Route
-          path="/"
-          element={
-            <Login>
-              <LoginPage />
-            </Login>
-          }
-        />
+// export const SITE_URI = "/project-management/user";
 
-        {/* Dashboard Route */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+function AppContent() {
+	return (
+		<Routes>
+			<Route path="/" element={<Navigate to={SITE_URI} replace />} />
 
-        {/* TaskByDay Route */}
-        <Route
-          path="/task-by-day"
-          element={
-            <ProtectedRoute>
-              <TaskByDay />
-            </ProtectedRoute>
-          }
-        />
+			<Route path={`${SITE_URI}/*`} element={<ProtectedRoute> <Layout />	</ProtectedRoute>}>
+				<Route path="dashboard" element={<Dashboard />} />
+				<Route path="task-by-day" element={<TaskByDay />} />
+				<Route path="tasks" element={<TaskByMonth />} />
+				<Route path="task-by-admin" element={<TaskByAdmin />} />
+				<Route path="teamleader-tasks" element={<TeamLeaderTask />} />
+				<Route
+					path="profile"
+					element={<Profile data={JSON.parse(sessionStorage.getItem("user"))} />}
+				/>
+			</Route>
 
-        {/* TaskByMonth Route */}
-        <Route
-          path="/task-by-month"
-          element={
-            <ProtectedRoute>
-              <TaskByMonth />
-            </ProtectedRoute>
-          }
-        />
+			<Route path={`${SITE_URI}`} element={<Login><LoginPage /></Login>} />
+		</Routes>
+	);
+}
 
-        {/* TaskByAdmin Route */}
-        <Route
-          path="/task-by-admin"
-          element={
-            <ProtectedRoute>
-              <TaskByAdmin />
-            </ProtectedRoute>
-          }
-        />
 
-        {/* TeamLeaderTask Route */}
-        <Route
-          path="/teamleader-tasks"
-          element={
-            <ProtectedRoute>
-              <TeamLeaderTask />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Profile Route */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              {/* FIXED: Passed mock user data to Profile component */}
-              <Profile data={JSON.parse(sessionStorage.getItem("user"))} />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </Router>
-  );
+const App = () => {
+	return (
+		<ThemeProvider theme={theme}>
+			<Router>
+				<CssBaseline />
+				<AppContent />
+			</Router>
+		</ThemeProvider>
+	)
 }
 
 export default App;
